@@ -62,6 +62,7 @@ sources:
 ## Folder Structure
 
 \+– data  
+|+—— raster_illustration.png
 |+—— nexrad-stations.txt  
 |+—— severeweatherdatainventory\_2015.zip  
 ||+———- hail-2015.csv  
