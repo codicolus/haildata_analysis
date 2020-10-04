@@ -44,7 +44,7 @@ For this analysis and visualization I used the following datasets/data sources:
 
 ## Folder Structure
 +-- data  
-|+------ raster_illustration.png
+|+------ raster_illustration.png  
 |+------ nexrad-stations.txt  
 |+------ severeweatherdatainventory_2015.zip  
 ||+---------- hail-2015.csv  
