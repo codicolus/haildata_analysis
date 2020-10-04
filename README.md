@@ -419,8 +419,9 @@ for in the auxiliary function is provided here. The misclassification
 does obviously happen for every cell and not only the last - which would
 cause an error anyways.
 
-![**Figure 1:** Misclassification of hail
-observations](../data/raster_illustration.png)
+<img src="https://github.com/codicolus/haildata_analysis/blob/master/data/raster_illustration.png"/>
+**Figure 1:** Misclassification of hail
+observations.
 
 ### Maximum hail size and hail days
 
@@ -548,8 +549,9 @@ map_sizes <- tm_shape(max_size_masked, bbox = bb) +
 #tmap_save(map_sizes, "./output/figures/maxhailsizes_2015.png", dpi=300)
 ```
 
-![**Figure 2:** Maximum (radar estimated) hail sizes observed in the US
-in the year 2015.](../output/figures/maxhailsizes_2015.png?raw=true)
+<img src="https://github.com/codicolus/haildata_analysis/blob/master/output/figures/maxhailsizes_2015.png"/>
+**Figure 2:** Maximum (radar estimated) hail sizes observed in the US
+in the year 2015.
 
 ``` r
 # mapping hail days
@@ -571,9 +573,9 @@ map_haildays <- tm_shape(hail_days_masked, bbox = bb) +
 # save map
 #tmap_save(map_haildays, "./output/figures/haildays_2015.png", dpi=300)
 ```
-
-![**Figure 3:** Maximum (radar estimated) hail sizes observed in the US
-in the year 2015.](../output/figures/haildays_2015.png?raw=true)
+<img src="https://github.com/codicolus/haildata_analysis/blob/master/output/figures/haildays_2015.png"/>
+**Figure 3:** Hail days observed in the US
+in the year 2015.
 
 ## Results & Discussion
 
@@ -609,8 +611,9 @@ to cheat a little bit - I used
 [**QGIS 3**](https://www.qgis.org/en/site/) and Map-Tiles provided by
 the [**US Geological Survey (USGS)**](https://www.usgs.gov/).
 
-![**Figure 4:** NEXRAD radar sites and topography of the CONUS
-region.](../qgis/nexrad_usnational.png?raw=true)
+<img src="https://github.com/codicolus/haildata_analysis/blob/master/qgis/nexrad_usnational.png"/>
+**Figure 4:** NEXRAD radar sites and topography of the CONUS
+region.
 
 #### Radars and hail detection
 
