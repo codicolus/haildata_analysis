@@ -549,7 +549,7 @@ map_sizes <- tm_shape(max_size_masked, bbox = bb) +
 ```
 
 ![**Figure 2:** Maximum (radar estimated) hail sizes observed in the US
-in the year 2015.](../output/figures/maxhailsizes_2015.png)
+in the year 2015.](../output/figures/maxhailsizes_2015.png?raw=true)
 
 ``` r
 # mapping hail days
@@ -573,7 +573,7 @@ map_haildays <- tm_shape(hail_days_masked, bbox = bb) +
 ```
 
 ![**Figure 3:** Maximum (radar estimated) hail sizes observed in the US
-in the year 2015.](../output/figures/haildays_2015.png)
+in the year 2015.](../output/figures/haildays_2015.png?raw=true)
 
 ## Results & Discussion
 
@@ -610,7 +610,7 @@ to cheat a little bit - I used
 the [**US Geological Survey (USGS)**](https://www.usgs.gov/).
 
 ![**Figure 4:** NEXRAD radar sites and topography of the CONUS
-region.](../qgis/nexrad_usnational.png)
+region.](../qgis/nexrad_usnational.png?raw=true)
 
 #### Radars and hail detection
 
