@@ -1,7 +1,7 @@
 Analysing NOAA Severe Weather Data using the `tmap` and `raster` package
 ================
-**Christoph von Matt**  
-**2020-10-04**
+Christoph von Matt
+2020-10-20
 
 ## Outline
 
@@ -57,7 +57,7 @@ sources:
   - Source: <https://www.ncdc.noaa.gov/homr/>
 
 **IMPORTANT:** The hail data has to be downloaded manually (or via
-[Kaggle](https://www.kaggle.com/noaa/severe-weather-data-inventory)).
+[Kaggle](https://www.kaggle.com/noaa/severe-weather-data-inventory))
 
 ## Folder Structure
 
@@ -95,7 +95,7 @@ manipulation. Data visualizations are conducted using the `tmap` package
 options(scipen=999)
 
 # libraries
-libs <- c("tidyverse", "lubridate", "sf", "tmap", "raster", "janitor", "rgdal")
+libs <- c("tidyverse", "lubridate", "sf", "tmap", "raster", "janitor", "rgdal", "rnaturalearth")
 
 # check if libraries are available
 pkgs_available <- libs %in% installed.packages()
@@ -122,7 +122,7 @@ From the output we can see that the US-States shapefile is a
 # Hail data - Severe Weather Data Inventory
 # unzip if necessary + read-in
 if(!file.exists("../data/hail-2015.csv")){
-  unzip("../data/severeweatherdatainventory_2015.zip", exdir = "../data")
+  unzip("./data/severeweatherdatainventory_2015.zip", exdir = "../data")
 }
 
 hail_data <- read_csv("../data/hail-2015.csv")
@@ -146,13 +146,13 @@ hail_data <- read_csv("../data/hail-2015.csv")
 # US-States Shapefile
 # unzip if necessary
 if(!file.exists("../data/shapefiles/s_11au16.shp")){
-  unzip("../data/shapefiles/s_11au16.zip", exdir = "../data/shapefiles")
+  unzip("./data/shapefiles/s_11au16.zip", exdir = "../data/shapefiles")
 }
 
 states_sf <- st_read(dsn = "../data/shapefiles/s_11au16.shp")
 ```
 
-    ## Reading layer `s_11au16' from data source `C:\Projekte\Informatics\Data_Science\R\Kaggle\temp\data\shapefiles\s_11au16.shp' using driver `ESRI Shapefile'
+    ## Reading layer `s_11au16' from data source `C:\Projekte\Informatics\Data_Science\R\Kaggle\hail-2015\data\shapefiles\s_11au16.shp' using driver `ESRI Shapefile'
     ## Simple feature collection with 57 features and 5 fields
     ## geometry type:  MULTIPOLYGON
     ## dimension:      XY
@@ -170,8 +170,10 @@ and visualization and also filtering out invalid data.
 First, the hail observation dataset gets some tidying. The **probability
 of hail** and **probability of severe hail** (variables `prob` and
 `sevprob`) are defined from 0-100%. Entries containing values lower than
-zero (-999) should thus be filtered out. We even take it a step further
-and want only to include observations with a 100%-probability of hail.
+zero (-999) should thus be filtered out. In this analysis we want to be
+sure to only include observations where hail detection is pretty
+certain. Thus, we even take it one step further and include only data
+with a 100% hail probability.
 
 Auxiliary variables are then derived mainly from the timestamp-variable
 (after renaming: `ymdhms`). We’ll later use them to aggregate the data.
@@ -216,7 +218,6 @@ hail_data <- hail_data %>%
          spring = ifelse(month_name %in% c("March", "April", "May"), "Spring (MAM)", NA),
          summer = ifelse(month_name %in% c("June", "July", "August"), "Summer (JJA)", NA),
          autumn = ifelse(month_name %in% c("September", "October", "November"), "Autumn (SON)", NA)) %>% 
-  mutate(autumn = as.character(autumn)) %>% 
   mutate(season = coalesce(winter, spring, summer, autumn))
 ```
 
@@ -224,8 +225,8 @@ hail_data <- hail_data %>%
 
 Less manipulation is needed to prepare the US-States multipolygon
 shapefile.  
-Only renaming and the restriction to the [**Contiguous USA
-(CONUS)**](https://en.wikipedia.org/wiki/Contiguous_United_States)
+We only rename some variables and restrict the data to the [**Contiguous
+USA (CONUS)**](https://en.wikipedia.org/wiki/Contiguous_United_States)
 region.
 
 ``` r
@@ -446,7 +447,7 @@ sizes (`maxsize`). After the rasterization, every 25x25km raster cell
 should contain only the **largest** maximum hail sizes detected in the
 year 2015, thus we use `fun = max`. A more detailed reference to the
 `rasterize` function can be found
-[here](https://www.rdocumentation.org/packages/raster/versions/3.3-13/topics/rasterize).
+[**here**](https://www.rdocumentation.org/packages/raster/versions/3.3-13/topics/rasterize).
 
 ``` r
 # drop geometry column
@@ -458,11 +459,11 @@ max_size <- rasterize(hail_data[,c("lon_transf", "lat_transf")], aux_raster,
 ```
 
 To calculate the hail days, days with an observation of 100%-hail
-probability are summed up for each raster cell. For this, we make use of
-some `dplyr`-magic\!  
+probability are summed up for each raster cell. For this, we use some
+`dplyr`-magic\!  
 First, we group the data with all variables we want to keep. The first
 variables in the grouping are the auxiliary date-related variables we
-created in Section **Setup -\> Hail Observations**. Further, we now take
+created in Section **Setup → Hail Observations**. Further, we now take
 advantage of the previously determined raster cells, such that a
 specific day with a hail observation does only count **ONCE** for a
 specific raster cell. As we want every hail observation on one specific
@@ -496,10 +497,10 @@ For this analysis we make use of the `tmap`-package. Similar to
 `ggplot2`, `tmap` also makes use of the [Grammar of Graphics (see
 Wickham, 2010)](https://www.tandfonline.com/doi/abs/10.1198/jcgs.2009.07098).
 
-Before we use `tmap`, one preparation related to the aesthetics is
-missing: masking the `max_size` and `hail_days` raster to the US States
-multipolygon such that only values laying on land get displayed\! For
-this purpose, the `raster::mask()` function suits our needs.
+Before we use `tmap`, one (aesthetical) preparation is missing: masking
+the `max_size` and `hail_days` raster to the US States multipolygon such
+that only values laying on land get displayed\! For this purpose, the
+`raster::mask()` function suits our needs.
 
 ``` r
 # masking maximum hail sizes + hail days
@@ -635,7 +636,8 @@ obtained which in turn can be used to estimate the precipitation
 intensity. To determine whether hail occurs within a convective storm,
 modern dual-polarization radars often use a combination of the
 reflectivity and a variable called “differential reflectivity”. For a
-detailed description of (dual polarization) radar variables see
+detailed description of (dual polarization) radar variables and their
+applications in radar meteorology see
 [Kumjian 2013a](http://nwafiles.nwas.org/jom/articles/2013/2013-JOM19/2013-JOM19.pdf)
 and
 [b](http://nwafiles.nwas.org/jom/articles/2013/2013-JOM20/2013-JOM20.pdf).
@@ -643,13 +645,13 @@ and
 “Classic” **hail detection algorithms**, such as the **probability of
 hail** (POH, `prob`, [Waldvogel et
 al. 1979](https://journals.ametsoc.org/jamc/article/18/12/1521/350431/Criteria-for-the-Detection-of-Hail-Cells))
-use information of the **environmental freezing level height** in
+use information on the **environmental freezing level height** in
 combination with the reflectivity variable. [Waldvogel et
 al. 1979](https://journals.ametsoc.org/jamc/article/18/12/1521/350431/Criteria-for-the-Detection-of-Hail-Cells)
 use the maximum height (“**EchoTop**”) to which reflectivity values
-characteristic to graupel/hail (e.g. 45dBZ) extending above the
+characteristic to graupel/hail (e.g. 45dBZ) extend above the
 environmental freezing level to estimate the probability of hail
-occurrence. The principle is that stronger convective storms are
+(occurrence). The principle is that stronger convective storms are
 supposed to have stronger updrafts which are able to lift larger
 precipitation particles to higher heights above the freezing level and
 hail thus becomes more likely as the environment favorable for hail
@@ -670,9 +672,9 @@ al. 1998](https://journals.ametsoc.org/waf/article/13/2/286/38053/An-Enhanced-H
 
 Radars sample the entire atmosphere in a certain period of time by
 scanning a full 360 degree circle at different (discrete) azimuths and
-elevation angles. How the atmosphere is sampled depends on radar system
-and scanning strategy. There are however limitations in sampling the
-atmosphere. First, current radar systems such as the **Weather
+elevation angles. How the atmosphere is sampled depends on both radar
+system and scanning strategy. There are however limitations in sampling
+the atmosphere. First, current radar systems such as the **Weather
 Surveillance Radar 88 Doppler (WSR-88D)** used in the **Next-Generation
 Radar (NEXRAD) network** are limited by a maximum elevation angle. This
 is not problematic when storms occur at a certain distance away from the
@@ -690,10 +692,9 @@ is highly recommended.
 
 Further, due to earth curvature, the lowest elevation is sampled in
 increasing height (above ground level) with increasing distance. At some
-point, no information from lower levels can be retrieved anymore. At
-some point downrange of the radar site, no meaningful data can be
-sampled anymore as the vertical resolution gets too low. The range from
-where meaningful information can be retrieved is mainly dependent on the
+point downrange of the radar site, no meaningful data can be sampled
+anymore as the vertical resolution gets too low. The range from where
+meaningful information can be retrieved is mainly depending on the
 **pulse repetition frequency (PRF)**. The radar pulse frequency denotes
 the frequency with with consecutive radar signals are transmitted. If
 the next signal has already been transmitted, returning signals from the
@@ -706,9 +707,9 @@ further away. These signals are called **second trip echos**. Avoiding
 this misinterpretation requires a range restriction.
 
 Another range limitation which shall be mentioned here is shielding by
-topography. If a radar is for example located too close to a mountain
-the full potential sampling range is correspondingly limited by the
-distance of the topographic obstacle.
+topography. If a radar is located too close to a mountain range the full
+potential sampling range is correspondingly limited to the distance of
+the topographic obstacle.
 
 Now let’s have a look at how this relates to our visualized hail data.
 
@@ -748,9 +749,9 @@ al. 2020](https://journals.ametsoc.org/bams/article/doi/10.1175/BAMS-D-20-0004.
 Also, an older study by [Doswell III et
 al. 2005](https://journals.ametsoc.org/waf/article/20/4/577/38967)
 analyzed the hail occurrence probability over the CONUS region.
-Especially their severe hail distribution for hail sizes \(\ge\) 2
-inches matches well with the hail data in 2015 (see Figure 9 in [Doswell
-III et
+Especially their severe hail distribution for hail sizes ≥ 2 inches
+matches well with the hail data for the year 2015 (see Figure 9 in
+[Doswell III et
 al. 2005](https://journals.ametsoc.org/waf/article/20/4/577/38967))
 
 The counted hail days for the year 2015 are also in accordance with the
@@ -789,7 +790,7 @@ of the reality\! These algorithms surely are model-calibrated to
 existing data (e.g. real hail observations), but still - the radar
 estimations are not ground truth data\! Verification with ground truth
 data is thus key - but still a challenge for local phenomena such as
-hail. Emerging approaches rely strongly on the public, for example
+hail. Emerging approaches strongly rely on the public, for example
 crowd-sourced hail reports using mobile apps (see [Barras et
 al. 2019](https://journals.ametsoc.org/bams/article/100/8/1429/344781))
 or storm spotter networks (see
@@ -803,6 +804,229 @@ the hailstones actually reached ground before melting. But knowing the
 fact, that “there are not so many hail instances” observed in Florida -
 we should be critical about the number of hail days detected solely by
 the radar hail signatures.
+
+## Recreation in `ggplot2`
+
+Instead of using `tmap`, we’ll try to recreate the maximum hail size and
+hail days data visualizations using the `ggplot2` package. *Can we
+recreate our maps fully based on `ggplot2`?* Whether this is possible,
+is of course an entirely rhetorical question. We’ll however not exactly
+recreate the created maps. This may be achieved with `theme_void`, but
+we’ll use `theme_linedraw` here.
+
+Also, I won’t go into too much detail here as the focus of this work
+lays on the `tmap` package.
+
+``` r
+# Loading additional packages
+library(rnaturalearth)
+```
+
+### Seasonal data aggregation
+
+We already created a `season` variable (character) specifying *Winter
+(DJF)*, *Spring (MAM)*, *Summer (JJA)* and *Autumn (SON)*.  
+This variable will now become handy as some seasonal analysis can be
+added here. For this we will use **faceting**. Note: Facets can also be
+applied to maps created with `tmap`.
+
+To be able to facet the data seasonally, we first must aggregate the
+data seasonally. For this we use our `season` variable as additional
+grouping variable.
+
+``` r
+# seasonal hail days
+hail_days_seasonal <- hail_data %>%
+  group_by(season, month, day, lon_usnat, lat_usnat) %>%
+  summarize(n = 1) %>%
+  dplyr::select(-n) %>%
+  ungroup()
+
+hail_days_seasonal <- hail_days_seasonal %>% 
+  group_by(season, lon_usnat, lat_usnat) %>% 
+  summarize(days = n()) %>% ungroup()
+
+# seasonal maximum hail sizes
+hailsize_seasonal <- hail_data %>%
+  group_by(season, lon_usnat, lat_usnat) %>%
+  summarize(size_max = max(maxsize)) %>%
+  ungroup()
+```
+
+### Prepare data for visualisation using `ggplot2`
+
+To visualize the very same (severe weather) data using `ggplot2` some
+transformations are required. For the visualization the `ggplot`
+geom-equivalent for raster is used (`geom_raster`). This requires the
+data to be a `data.frame` with both `x` and `y` columns to specify each
+raster cell and a column containing the value (e.g. `hail_size`). We
+apply this to both masked-rasters.
+
+``` r
+# Transforming masked-rasters to df
+maxsizes <- as.data.frame(max_size_masked, xy = TRUE)
+hail_days <- as.data.frame(hail_days_masked, xy = TRUE)
+
+# renaming
+colnames(maxsizes)[3] <- "maxsize"
+colnames(hail_days)[3] <- "hail_days"
+```
+
+To recreate the `tmap` visualizations, the data must be discretized
+according to the automatically generated `tmap` breaks. Further, the
+colorscale is created as a vector of hex-values for both maximum hail
+sizes and hail days.
+
+``` r
+# maximum hail sizes
+breaks_sizes <- seq(0.5,4,0.5)
+colors_sizes <- c("#FFFBD4", "#FEECA5", "#FECF66", "#FEA332", "#EC7114", "#C74A02", "#8E3004")
+
+# hail days
+breaks_days <- seq(0,30,5)
+colors_days <- c("#FFFACE", "#FEE697", "#FEBE4A", "#F88B22", "#DB5D0A", "#A33803", "#FFFFFF")
+```
+
+``` r
+# discretization maximum sizes
+maxsizes$discrete <- cut(maxsizes$maxsize, breaks = breaks_sizes, right = TRUE, include.lowest  = TRUE)
+# seasonal hailsizes
+# hailsize_seasonal$discrete <- cut(test_size_seasonal$size_max, breaks = breaks_sizes, right = TRUE, include.lowest  = TRUE) 
+
+# discretization hail days
+hail_days$discrete <- cut(hail_days$hail_days, breaks = breaks_days, right = TRUE, include.lowest = TRUE)
+
+hail_days_seasonal$discrete <- cut(hail_days_seasonal$days, breaks = breaks_days, right = TRUE, include.lowest = TRUE)
+```
+
+### Visualization using `ggplot2`
+
+#### Maximum hail sizes and hail days 2015
+
+The annual data is already masked as it was transformed from masked
+rasters. Therefore no additional transformation/work is required
+
+For the hail data, `geom_raster` is used and for the contiguous United
+States multipolygon, `geom_sf` suits our needs. We use the polygons
+twice - once for a white background and the second time to overlay the
+state borders over the hail data.
+
+``` r
+# annual maximum hail sizes 2015
+ggplot_sizes <- ggplot() +
+  geom_sf(data=states_usnational, fill="white", lwd = 0.3) +
+  geom_raster(data=maxsizes, aes(x=x, y=y, fill=discrete)) +
+  scale_fill_manual(values=colors_sizes, 
+                    labels = c("0.5 - 1.0", "1.0 - 1.5", "1.5 - 2.0", "2.0 - 2.5", "2.5 - 3.0",
+                               "3.0 - 3.5", "3.5 - 4.0", ""),
+                    name = "Size (inches)",
+                   guide = guide_legend(direction = "horizontal", label.position = "bottom",
+                                        keyheight = unit(2, units = "mm"), 
+                                        keywidth = unit(15 / length(labels), units = "mm"), 
+                                        nrow = 1, byrow = TRUE, 
+                                        title.position = 'top', title.hjust = 0.5)) +
+  geom_sf(data=states_usnational, fill="darkgrey", alpha=0, lwd = 0.3) +
+  labs(title = "Maximum hail sizes in 2015", x = "Longitude", y = "Latitude",
+       subtitle = "Maximum MEHS detections",
+       caption = "Plot by Christoph von Matt / @chvonmatt || Data: NOAA Severe Weather Data Inventory || Projection: US National Equal Area") +
+  theme_linedraw() +
+  theme(panel.border = element_blank(), legend.position = "bottom",
+        plot.caption = element_text(size = 8, hjust = 0.5))
+
+
+
+# annual hail days 2015
+ggplot_days <- ggplot() +
+  geom_sf(data=states_usnational, fill="white", lwd = 0.3) +
+  geom_raster(data=hail_days, aes(x=x, y=y, fill=discrete)) +
+  scale_fill_manual(values=colors_days, 
+                    labels = c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30", ""),
+                    name = "Number of days",
+                    guide = guide_legend(direction = "horizontal", label.position = "bottom", 
+                                         keyheight = unit(2, units = "mm"), 
+                                         keywidth = unit(15 / length(labels), units = "mm"), 
+                                         nrow = 1, byrow = TRUE, 
+                                         title.position = 'top', title.hjust = 0.5)) +
+  geom_sf(data=states_usnational, fill="darkgrey", alpha=0, lwd = 0.3) +
+  labs(title = "Hail days in 2015 (CONUS region)", x = "Longitude", y = "Latitude", 
+       subtitle = "Days with at least one observation of POH = 100%",
+       caption = "Plot by Christoph von Matt / @chvonmatt || Data: NOAA Severe Weather Data Inventory || Projection: US National Equal Area") +
+  theme_linedraw() +
+  theme(panel.border = element_blank(), legend.position = "bottom",
+        plot.caption = element_text(size = 8, hjust = 0.5))
+
+
+# save plots
+#ggsave("../output/figures/maxsize_ggplot.png", ggplot_sizes, dpi=300)
+#ggsave("../output/figures/haildays_ggplot.png", ggplot_days, dpi=300)
+```
+
+![**Figure A: Maximum hail sizes in 2015
+(ggplot-based)**](../output/figures/maxsize_ggplot.png)
+
+![**Figure B: Hail days in 2015
+(ggplot-based)**](../output/figures/haildays_ggplot.png)
+
+#### Seasonal hail days
+
+For the seasonal hail days we need one more processing step: masking the
+data to the multipolygon shapefile. This is realized using `sf`
+manipulations. We first have to transform the data to a `sf` object
+again
+
+``` r
+# sf-object
+seasonal_days_sf <- st_as_sf(hail_days_seasonal, coords = c("lon_usnat", "lat_usnat"))
+seasonal_days_sf <- seasonal_days_sf %>% st_set_crs(2163)
+
+# Load US Natural Earth data
+world <- ne_countries(scale="medium", type="map_units", returnclass = "sf")
+usa <- world %>% filter(name == "United States")
+
+# transform data
+usa_usnational <- st_transform(usa, st_crs(2163))
+
+# get points on land
+points_onland <- st_intersects(seasonal_days_sf, usa_usnational, sparse = FALSE, dist = 25000)[,1]
+
+# clean variables
+rm(seasonal_days_sf, usa, world)
+
+
+# confine data to land
+hail_days_seasonal <- hail_days_seasonal[points_onland, ]
+```
+
+``` r
+# seasonal hail days
+# SEASONAL HAIL DAYS
+ggplot_seas_hd <- ggplot() +
+  geom_sf(data=states_usnational, fill="white", lwd = 0.3) +
+  geom_raster(data=hail_days_seasonal, aes(x=lon_usnat, y=lat_usnat, fill = discrete)) +
+  scale_fill_manual(values=colors_days, 
+                    labels = c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30", ""),
+                    name = "Number of days",
+                    guide = guide_legend(direction = "horizontal", label.position = "bottom", 
+                                         keyheight = unit(2, units = "mm"),
+                                         keywidth = unit(15 / length(labels), units = "mm"), 
+                                         nrow = 1, byrow = TRUE, 
+                                         title.position = 'top', title.hjust = 0.5)) +
+  geom_sf(data=states_usnational, fill="darkgrey", alpha=0, lwd = 0.3) +
+  labs(title = "Hail days in 2015 (CONUS region)", x = "Longitude", y = "Latitude", 
+       subtitle = "Days with at least one observation of POH = 100%",
+       caption = "Plot by Christoph von Matt / @chvonmatt || Data: NOAA Severe Weather Data Inventory || Projection: US National Equal Area") +
+  theme_linedraw() +
+  theme(panel.border = element_blank(), legend.position = "bottom",
+        plot.caption = element_text(size = 8, hjust = 0.5)) +
+  facet_wrap(~season)
+
+
+# save map
+#ggsave("../output/figures/haildays_seasonal.png", ggplot_seas_hd, dpi=300)
+```
+
+![**Figure C: Hail days in 2015
+(ggplot-based)**](../output/figures/haildays_seasonal.png)
 
 ## Acknowlegments
 
