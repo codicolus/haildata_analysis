@@ -966,12 +966,10 @@ ggplot_days <- ggplot() +
 ```
 
 <img src="https://github.com/codicolus/haildata_analysis/blob/master/output/figures/maxsize_ggplot.png"/>
-**Figure A: Maximum hail sizes in 2015
-(ggplot-based).**
+**Figure A: Maximum hail sizes in 2015 (ggplot-based).**
 
 <img src="https://github.com/codicolus/haildata_analysis/blob/master/output/figures/haildays_ggplot.png"/>
-**Figure B: Hail days in 2015
-(ggplot-based).**
+**Figure B: Hail days in 2015 (ggplot-based).**
 
 #### Seasonal hail days
 
@@ -1032,8 +1030,7 @@ ggplot_seas_hd <- ggplot() +
 ```
 
 <img src="https://github.com/codicolus/haildata_analysis/blob/master/output/figures/haildays_seasonal.png"/>
-**Figure C: Hail days per season in 2015
-(ggplot-based).**
+**Figure C: Hail days per season in 2015 (ggplot-based).**
 
 ## Acknowlegments
 
